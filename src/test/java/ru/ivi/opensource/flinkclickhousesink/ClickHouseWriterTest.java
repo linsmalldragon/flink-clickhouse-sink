@@ -53,12 +53,12 @@ public class ClickHouseWriterTest {
 
     private static final int HTTP_CLICKHOUSE_PORT = 8123;
 
-    private static final String JDBC_DRIVER = "ru.yandex.clickhouse.ClickHouseDriver";
+    private static final String JDBC_DRIVER = "com.clickhouse.jdbc.ClickHouseDriver";
 
     private HikariDataSource hikariDataSource;
 
     @Rule
-    public ClickHouseContainer clickHouse = new ClickHouseContainer();
+    public ClickHouseContainer clickHouse = new ClickHouseContainer("clickhouse/clickhouse-server");
 
     private ClickHouseSinkManager sinkManager;
 
@@ -280,7 +280,6 @@ public class ClickHouseWriterTest {
         ParameterTool parameters = ParameterTool.fromMap(params);
         env.getConfig().setGlobalJobParameters(parameters);
         env.getConfig().setRestartStrategy(RestartStrategies.noRestart());
-        env.getConfig().disableSysoutLogging();
 
         Properties props = new Properties();
         props.put(ClickHouseSinkConst.TARGET_TABLE_NAME, "test.test1");

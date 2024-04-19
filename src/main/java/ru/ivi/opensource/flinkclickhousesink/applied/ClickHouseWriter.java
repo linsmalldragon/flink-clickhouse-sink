@@ -2,6 +2,7 @@ package ru.ivi.opensource.flinkclickhousesink.applied;
 
 import com.google.common.collect.Lists;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import lombok.extern.slf4j.Slf4j;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Dsl;
@@ -30,8 +31,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Slf4j
 public class ClickHouseWriter implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(ClickHouseWriter.class);
 
     private final BlockingQueue<ClickHouseRequestBlank> commonQueue;
     private final AtomicLong unprocessedRequestsCounter = new AtomicLong();
@@ -60,7 +61,7 @@ public class ClickHouseWriter implements AutoCloseable {
             initDir(sinkParams.getFailedRecordsPath());
             buildComponents();
         } catch (Exception e) {
-            logger.error("Error while starting CH writer", e);
+            log.error("Error while starting CH writer", e);
             throw new RuntimeException(e);
         }
     }
@@ -71,7 +72,7 @@ public class ClickHouseWriter implements AutoCloseable {
     }
 
     private void buildComponents() {
-        logger.info("Building components");
+        log.info("Building components");
 
         ThreadFactory threadFactory = ThreadUtil.threadFactory("clickhouse-writer");
         service = Executors.newFixedThreadPool(sinkParams.getNumWriters(), threadFactory);
@@ -93,25 +94,25 @@ public class ClickHouseWriter implements AutoCloseable {
             unprocessedRequestsCounter.incrementAndGet();
             commonQueue.put(params);
         } catch (InterruptedException e) {
-            logger.error("Interrupted error while putting data to queue", e);
+            log.error("Interrupted error while putting data to queue", e);
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
     private void waitUntilAllFuturesDone() {
-        logger.info("Wait until all futures are done or completed exceptionally. Futures size: {}", futures.size());
+        log.info("Wait until all futures are done or completed exceptionally. Futures size: {}", futures.size());
         try {
             while (unprocessedRequestsCounter.get() > 0 || !futures.isEmpty()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Futures size: {}.", futures.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("Futures size: {}.", futures.size());
                 }
                 CompletableFuture<Void> future = FutureUtil.allOf(futures);
                 try {
                     future.get();
                     futures.removeIf(f -> f.isDone() && !f.isCompletedExceptionally());
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Futures size after removing: {}", futures.size());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Futures size after removing: {}", futures.size());
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -124,28 +125,28 @@ public class ClickHouseWriter implements AutoCloseable {
     }
 
     private void stopWriters() {
-        logger.info("Stopping writers.");
+        log.info("Stopping writers.");
         if (tasks != null && tasks.size() > 0) {
             tasks.forEach(WriterTask::setStopWorking);
         }
-        logger.info("Writers stopped.");
+        log.info("Writers stopped.");
     }
 
     @Override
     public void close() throws Exception {
-        logger.info("ClickHouseWriter is shutting down.");
+        log.info("ClickHouseWriter is shutting down.");
         try {
             waitUntilAllFuturesDone();
         } finally {
             ThreadUtil.shutdownExecutorService(service);
             ThreadUtil.shutdownExecutorService(callbackService);
             asyncHttpClient.close();
-            logger.info("{} shutdown complete.", ClickHouseWriter.class.getSimpleName());
+            log.info("{} shutdown complete.", ClickHouseWriter.class.getSimpleName());
         }
     }
 
     static class WriterTask implements Runnable {
-        private static final Logger logger = LoggerFactory.getLogger(WriterTask.class);
+        private static final Logger log = LoggerFactory.getLogger(WriterTask.class);
 
         private static final int HTTP_OK = 200;
 
@@ -181,7 +182,7 @@ public class ClickHouseWriter implements AutoCloseable {
             try {
                 isWorking = true;
 
-                logger.info("Start writer task, id = {}", id);
+                log.info("Start writer task, id = {}", id);
                 while (isWorking || queue.size() > 0) {
                     ClickHouseRequestBlank blank = queue.poll(300, TimeUnit.MILLISECONDS);
                     if (blank != null) {
@@ -191,16 +192,16 @@ public class ClickHouseWriter implements AutoCloseable {
                     }
                 }
             } catch (Exception e) {
-                logger.error("Error while inserting data", e);
+                log.error("Error while inserting data", e);
                 throw new RuntimeException(e);
             } finally {
-                logger.info("Task id = {} is finished", id);
+                log.info("Task id = {} is finished", id);
             }
         }
 
         private void send(ClickHouseRequestBlank requestBlank, CompletableFuture<Boolean> future) {
             Request request = buildRequest(requestBlank);
-            logger.info("Ready to load data to {}, size = {}", requestBlank.getTargetTable(), requestBlank.getValues().size());
+            log.info("Ready to load data to {}, size = {}", requestBlank.getTargetTable(), requestBlank.getValues().size());
             ListenableFuture<Response> whenResponse = asyncHttpClient.executeRequest(request);
             Runnable callback = responseCallback(whenResponse, requestBlank, future);
             whenResponse.addListener(callback, callbackService);
@@ -232,19 +233,19 @@ public class ClickHouseWriter implements AutoCloseable {
                     if (response.getStatusCode() != HTTP_OK) {
                         handleUnsuccessfulResponse(response, requestBlank, future);
                     } else {
-                        logger.info("Successful send data to ClickHouse, batch size = {}, target table = {}, current attempt = {}",
+                        log.info("Successful send data to ClickHouse, batch size = {}, target table = {}, current attempt = {}",
                                 requestBlank.getValues().size(),
                                 requestBlank.getTargetTable(),
                                 requestBlank.getAttemptCounter());
                         future.complete(true);
                     }
                 } catch (Exception e) {
-                    logger.error("Error while executing callback, params = {}", sinkSettings, e);
+                    log.error("Error while executing callback, params = {}", sinkSettings, e);
                     requestBlank.setException(e);
                     try {
                         handleUnsuccessfulResponse(response, requestBlank, future);
                     } catch (Exception error) {
-                        logger.error("Error while handle unsuccessful response", error);
+                        log.error("Error while handle unsuccessful response", error);
                         future.completeExceptionally(error);
                     }
                 } finally {
@@ -256,14 +257,14 @@ public class ClickHouseWriter implements AutoCloseable {
         private void handleUnsuccessfulResponse(Response response, ClickHouseRequestBlank requestBlank, CompletableFuture<Boolean> future) throws Exception {
             int currentCounter = requestBlank.getAttemptCounter();
             if (currentCounter >= sinkSettings.getMaxRetries()) {
-                logger.warn("Failed to send data to ClickHouse, cause: limit of attempts is exceeded." +
+                log.warn("Failed to send data to ClickHouse, cause: limit of attempts is exceeded." +
                         " ClickHouse response = {}. Ready to flush data on disk.", response, requestBlank.getException());
                 logFailedRecords(requestBlank);
                 future.completeExceptionally(new RuntimeException(String.format("Failed to send data to ClickHouse, cause: limit of attempts is exceeded." +
                         " ClickHouse response: %s. Cause: %s", response != null ? response.getResponseBody() : null, requestBlank.getException())));
             } else {
                 requestBlank.incrementCounter();
-                logger.warn("Next attempt to send data to ClickHouse, table = {}, buffer size = {}, current attempt num = {}, max attempt num = {}, response = {}",
+                log.warn("Next attempt to send data to ClickHouse, table = {}, buffer size = {}, current attempt num = {}, max attempt num = {}, response = {}",
                         requestBlank.getTargetTable(),
                         requestBlank.getValues().size(),
                         requestBlank.getAttemptCounter(),
@@ -286,7 +287,7 @@ public class ClickHouseWriter implements AutoCloseable {
                 records.forEach(writer::println);
                 writer.flush();
             }
-            logger.info("Successful send data on disk, path = {}, size = {} ", filePath, requestBlank.getValues().size());
+            log.info("Successful send data on disk, path = {}, size = {} ", filePath, requestBlank.getValues().size());
         }
 
         void setStopWorking() {

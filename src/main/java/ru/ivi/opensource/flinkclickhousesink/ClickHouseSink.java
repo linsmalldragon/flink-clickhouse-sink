@@ -1,5 +1,6 @@
 package ru.ivi.opensource.flinkclickhousesink;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.slf4j.Logger;
@@ -9,10 +10,9 @@ import ru.ivi.opensource.flinkclickhousesink.applied.Sink;
 
 import java.util.Map;
 import java.util.Properties;
-
+@Slf4j
 public class ClickHouseSink<T> extends RichSinkFunction<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClickHouseSink.class);
 
     private static final Object DUMMY_LOCK = new Object();
 
@@ -58,7 +58,7 @@ public class ClickHouseSink<T> extends RichSinkFunction<T> {
             String recordAsCSV = clickHouseSinkConverter.convert(record);
             sink.put(recordAsCSV);
         } catch (Exception e) {
-            logger.error("Error while sending data to ClickHouse, record = {}", record, e);
+            log.error("Error while sending data to ClickHouse, record = {}", record, e);
             throw new RuntimeException(e);
         }
     }

@@ -1,6 +1,7 @@
 package ru.ivi.opensource.flinkclickhousesink.applied;
 
 import com.google.common.base.Preconditions;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ivi.opensource.flinkclickhousesink.model.ClickHouseSinkCommonParams;
@@ -11,8 +12,8 @@ import java.util.concurrent.CompletableFuture;
 import static ru.ivi.opensource.flinkclickhousesink.model.ClickHouseSinkConst.MAX_BUFFER_SIZE;
 import static ru.ivi.opensource.flinkclickhousesink.model.ClickHouseSinkConst.TARGET_TABLE_NAME;
 
+@Slf4j
 public class ClickHouseSinkManager implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(ClickHouseSinkManager.class);
 
     private final ClickHouseWriter clickHouseWriter;
     private final ClickHouseSinkScheduledCheckerAndCleaner clickHouseSinkScheduledCheckerAndCleaner;
@@ -25,7 +26,7 @@ public class ClickHouseSinkManager implements AutoCloseable {
         sinkParams = new ClickHouseSinkCommonParams(globalParams);
         clickHouseWriter = new ClickHouseWriter(sinkParams, futures);
         clickHouseSinkScheduledCheckerAndCleaner = new ClickHouseSinkScheduledCheckerAndCleaner(sinkParams, futures);
-        logger.info("Build sink writer's manager. params = {}", sinkParams);
+        log.info("Build sink writer's manager. params = {}", sinkParams);
     }
 
     public Sink buildSink(Properties localProperties) {
@@ -63,10 +64,10 @@ public class ClickHouseSinkManager implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        logger.info("ClickHouse sink manager is shutting down.");
+        log.info("ClickHouse sink manager is shutting down.");
         clickHouseSinkScheduledCheckerAndCleaner.close();
         clickHouseWriter.close();
         isClosed = true;
-        logger.info("ClickHouse sink manager shutdown complete.");
+        log.info("ClickHouse sink manager shutdown complete.");
     }
 }

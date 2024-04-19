@@ -38,16 +38,17 @@
         <ch.driver.version>0.6.0-patch3</ch.driver.version>
 
         <!-- Testing components -->
-        <junit.version>4.13.1</junit.version>
-        <mockito.version>2.8.9</mockito.version>
-        <awaitility.version>3.1.2</awaitility.version>
-        <testcontainers.version>1.17.1</testcontainers.version>
-        <hikari.version>2.3.8</hikari.version>
+        <junit.version>4.13.2</junit.version>
+        <mockito.version>5.11.0</mockito.version>
+        <awaitility.version>4.2.1</awaitility.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
+        <hikari.version>5.1.0</hikari.version>
         <jmock.junit4.version>2.13.1</jmock.junit4.version>
         <jackson.version>2.14.1</jackson.version>
 
         <!-- Plugins version -->
         <mvn.compiler.version>3.7.0</mvn.compiler.version>
+        <httpclient5.version>5.3.1</httpclient5.version>
     </properties>
 
     <scm>
@@ -102,6 +103,11 @@
     </licenses>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${httpclient5.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -132,6 +138,14 @@
             <artifactId>flink-streaming-scala_2.12</artifactId>
             <version>${flink.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients</artifactId>
+            <version>${flink.version}</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <dependency>
             <groupId>junit</groupId>
@@ -188,11 +202,24 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

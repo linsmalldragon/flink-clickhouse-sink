@@ -1,8 +1,7 @@
 package ru.ivi.opensource.flinkclickhousesink.applied;
 
 import com.google.common.base.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import ru.ivi.opensource.flinkclickhousesink.model.ClickHouseRequestBlank;
 import ru.ivi.opensource.flinkclickhousesink.util.FutureUtil;
 
@@ -13,8 +12,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class ClickHouseSinkBuffer implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(ClickHouseSinkBuffer.class);
 
     private final ClickHouseWriter writer;
     private final String targetTable;
@@ -40,7 +39,7 @@ public class ClickHouseSinkBuffer implements AutoCloseable {
 
         this.futures = futures;
 
-        logger.info("Instance ClickHouse Sink, target table = {}, buffer size = {}", this.targetTable, this.maxFlushBufferSize);
+        log.info("Instance ClickHouse Sink, target table = {}, buffer size = {}", this.targetTable, this.maxFlushBufferSize);
     }
 
     String getTargetTable() {
@@ -67,7 +66,7 @@ public class ClickHouseSinkBuffer implements AutoCloseable {
                 .withTargetTable(targetTable)
                 .build();
 
-        logger.debug("Build blank with params: buffer size = {}, target table  = {}", params.getValues().size(), params.getTargetTable());
+        log.debug("Build blank with params: buffer size = {}, target table  = {}", params.getValues().size(), params.getTargetTable());
         writer.put(params);
 
         localValues.clear();
@@ -100,11 +99,11 @@ public class ClickHouseSinkBuffer implements AutoCloseable {
 
     @Override
     public void close() {
-        logger.info("ClickHouse sink buffer is shutting down.");
+        log.info("ClickHouse sink buffer is shutting down.");
         if (localValues != null && localValues.size() > 0) {
             addToQueue();
         }
-        logger.info("ClickHouse sink buffer shutdown complete.");
+        log.info("ClickHouse sink buffer shutdown complete.");
     }
 
     public static final class Builder {
