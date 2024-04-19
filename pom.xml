@@ -26,16 +26,16 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Primary components -->
-        <java.version>1.8</java.version>
-        <scala.version>2.11</scala.version>
-        <flink.version>1.9.0</flink.version>
+        <java.version>17</java.version>
+        <scala.version>2.12</scala.version>
+        <flink.version>1.18.1</flink.version>
 
         <!-- Secondary components -->
-        <async.client.version>2.10.4</async.client.version>
-        <logback.version>1.2.3</logback.version>
-        <guava.version>23.0</guava.version>
-        <typesafe.config.version>1.3.3</typesafe.config.version>
-        <ch.driver.version>0.1.40</ch.driver.version>
+        <async.client.version>2.12.3</async.client.version>
+        <logback.version>1.4.14</logback.version>
+        <guava.version>32.1.3-jre</guava.version>
+        <typesafe.config.version>1.4.3</typesafe.config.version>
+        <ch.driver.version>0.6.0-patch3</ch.driver.version>
 
         <!-- Testing components -->
         <junit.version>4.13.1</junit.version>
@@ -43,8 +43,8 @@
         <awaitility.version>3.1.2</awaitility.version>
         <testcontainers.version>1.17.1</testcontainers.version>
         <hikari.version>2.3.8</hikari.version>
-        <jmock.junit4.version>2.9.0</jmock.junit4.version>
-        <jackson.version>2.13.2</jackson.version>
+        <jmock.junit4.version>2.13.1</jmock.junit4.version>
+        <jackson.version>2.14.1</jackson.version>
 
         <!-- Plugins version -->
         <mvn.compiler.version>3.7.0</mvn.compiler.version>
@@ -129,7 +129,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.version}</artifactId>
+            <artifactId>flink-streaming-scala_2.12</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
@@ -141,7 +141,7 @@
         </dependency>
 
         <dependency>
-            <groupId>ru.yandex.clickhouse</groupId>
+            <groupId>com.clickhouse</groupId>
             <artifactId>clickhouse-jdbc</artifactId>
             <version>${ch.driver.version}</version>
             <scope>test</scope>
